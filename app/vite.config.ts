@@ -1,6 +1,6 @@
 /// <reference types="vitest/config" />
 import { cpSync, createReadStream, existsSync, statSync } from "node:fs";
-import { dirname, join, normalize, sep } from "node:path";
+import { dirname, join, relative } from "node:path";
 import { createRequire } from "node:module";
 import { defineConfig, type Plugin } from "vite";
 import react from "@vitejs/plugin-react";
@@ -31,12 +31,11 @@ function pdfjsResources(): Plugin {
     },
     configureServer(server) {
       server.middlewares.use(`/${PDFJS_PUBLIC}/`, (req, res, next) => {
-        const rel = normalize(decodeURIComponent((req.url ?? "").split("?")[0])).replace(/^[\/]+/, "");
-        const [dir] = rel.split(sep);
-        const file = join(pdfjsRoot, rel);
-        if (!PDFJS_DIRS.includes(dir) || !file.startsWith(pdfjsRoot) || !existsSync(file) || !statSync(file).isFile()) {
-          return next();
-        }
+        const parts = decodeURIComponent((req.url ?? "").split("?")[0]).split("/").filter(Boolean);
+        const file = join(pdfjsRoot, ...parts);
+        const inside = PDFJS_DIRS.includes(parts[0]) && !relative(join(pdfjsRoot, parts[0]), file).startsWith("..");
+        const ok = inside && existsSync(file) && statSync(file).isFile();
+        if (!ok) return next();
         const ext = file.slice(file.lastIndexOf("."));
         res.setHeader("Content-Type", MIME[ext] ?? "application/octet-stream");
         createReadStream(file).pipe(res);
