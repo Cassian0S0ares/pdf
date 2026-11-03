@@ -29,6 +29,10 @@ html, body, #root { margin: 0; height: 100%; }
 .zoom-label { min-width: 64px; text-align: center; }
 .badge { margin-left: auto; padding: 2px 8px; border-radius: 10px; background: #fdecea; color: var(--accent); font-size: 12px; }
 
+.search-bar { display: flex; align-items: center; gap: 6px; padding: 4px 8px; background: var(--panel); border-bottom: 1px solid var(--border); }
+.search-bar input { width: 260px; padding: 4px 6px; }
+.search-count { min-width: 110px; color: #666; font-size: 12px; }
+
 .main { flex: 1; display: flex; min-height: 0; }
 .sidebar { width: 180px; display: flex; flex-direction: column; background: var(--panel); border-right: 1px solid var(--border); }
 .sidebar-tabs { display: flex; border-bottom: 1px solid var(--border); }
