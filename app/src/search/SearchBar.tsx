@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from "react";
-import { goToPage } from "../app/actions";
+import { errorMessage } from "../lib/errors";
 import { useDocuments, type Tab } from "../store/documents";
+import { useNotices } from "../store/notices";
+import { createRunGuard } from "./runGuard";
 import { searchDocument } from "./search";
 
 export function SearchBar({ tab }: { tab: Tab }) {
@@ -9,6 +11,7 @@ export function SearchBar({ tab }: { tab: Tab }) {
   const [query, setQuery] = useState(tab.search.query);
   const [busy, setBusy] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+  const runs = useRef(createRunGuard()).current;
   const { matches, active } = tab.search;
   const docId = tab.info.docId;
 
@@ -17,23 +20,30 @@ export function SearchBar({ tab }: { tab: Tab }) {
   const select = (index: number) => {
     if (matches.length === 0) return;
     const next = (index + matches.length) % matches.length;
-    updateTab(docId, { search: { ...tab.search, active: next } });
-    goToPage(matches[next].pageIndex);
+    updateTab(docId, { search: { ...tab.search, active: next }, gotoPage: matches[next].pageIndex });
   };
 
   const run = async () => {
     if (query === tab.search.query && matches.length > 0) return select(active + 1);
+    const isLatest = runs.start();
     setBusy(true);
     try {
       const found = await searchDocument(tab.pdf, query);
-      updateTab(docId, { search: { query, matches: found, active: 0 } });
-      if (found.length > 0) goToPage(found[0].pageIndex);
+      if (!isLatest()) return; // uma busca mais nova já foi iniciada
+      // Atualiza (e navega) a aba que iniciou a busca, mesmo que outra esteja ativa agora.
+      updateTab(docId, {
+        search: { query, matches: found, active: 0 },
+        ...(found.length > 0 ? { gotoPage: found[0].pageIndex } : {}),
+      });
+    } catch (e) {
+      if (isLatest()) useNotices.getState().push("error", `Busca: ${errorMessage(e)}`);
     } finally {
-      setBusy(false);
+      if (isLatest()) setBusy(false);
     }
   };
 
   const close = () => {
+    runs.start(); // descarta resultados de buscas em andamento
     updateTab(docId, { search: { query: "", matches: [], active: 0 } });
     setSearchOpen(false);
   };
