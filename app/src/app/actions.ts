@@ -52,8 +52,8 @@ export function rotateView(dir: 1 | -1): void {
 
 export function goToPage(index: number): void {
   const tab = active();
-  if (!tab) return;
-  patchActive({ gotoPage: Math.min(Math.max(index, 0), tab.pdf.numPages - 1) });
+  if (!tab || !Number.isFinite(index)) return;
+  patchActive({ gotoPage: Math.min(Math.max(Math.trunc(index), 0), tab.pdf.numPages - 1) });
 }
 
 export function goRelative(delta: number): void {
