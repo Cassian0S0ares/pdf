@@ -1,6 +1,6 @@
 use std::sync::Mutex;
 
-use livrepdf_core::{AppError, DocumentInfo, DocumentSession, SessionStore};
+use livrepdf_core::{AppError, DocumentInfo, DocumentSession, ErrorCode, SessionStore};
 use tauri::{Emitter, Manager, State};
 
 #[derive(Default)]
@@ -13,23 +13,32 @@ pub fn pdf_args(args: impl IntoIterator<Item = String>) -> Vec<String> {
         .collect()
 }
 
+fn lock(state: &AppState) -> std::sync::MutexGuard<'_, SessionStore> {
+    state.0.lock().expect("session store poisoned")
+}
+
+// Comandos async rodam no pool de threads do Tauri, fora da thread principal (UI).
+
 #[tauri::command]
-fn open_document(path: String, state: State<AppState>) -> Result<DocumentInfo, AppError> {
-    let session = DocumentSession::open(&path)?;
-    let mut store = state.0.lock().expect("session store poisoned");
+async fn open_document(path: String, state: State<'_, AppState>) -> Result<DocumentInfo, AppError> {
+    // Leitura e parse do arquivo fora do lock do store (e fora das threads async).
+    let session = tauri::async_runtime::spawn_blocking(move || DocumentSession::open(&path))
+        .await
+        .map_err(|e| AppError::new(ErrorCode::Internal, "Falha interna ao abrir o documento").with_details(e.to_string()))??;
+    let mut store = lock(&state);
     let id = store.insert(session);
     Ok(store.get(&id)?.info(&id))
 }
 
 #[tauri::command]
-fn get_document_bytes(doc_id: String, state: State<AppState>) -> Result<tauri::ipc::Response, AppError> {
-    let store = state.0.lock().expect("session store poisoned");
-    Ok(tauri::ipc::Response::new(store.get(&doc_id)?.bytes().to_vec()))
+async fn get_document_bytes(doc_id: String, state: State<'_, AppState>) -> Result<tauri::ipc::Response, AppError> {
+    let bytes = lock(&state).get(&doc_id)?.bytes().to_vec();
+    Ok(tauri::ipc::Response::new(bytes))
 }
 
 #[tauri::command]
-fn close_document(doc_id: String, state: State<AppState>) -> Result<(), AppError> {
-    state.0.lock().expect("session store poisoned").remove(&doc_id)
+async fn close_document(doc_id: String, state: State<'_, AppState>) -> Result<(), AppError> {
+    lock(&state).remove(&doc_id)
 }
 
 #[tauri::command]

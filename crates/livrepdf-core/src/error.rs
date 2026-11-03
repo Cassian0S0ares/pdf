@@ -8,6 +8,7 @@ pub enum ErrorCode {
     Io,
     NotAPdf,
     DocumentNotFound,
+    Internal,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, thiserror::Error)]
@@ -52,5 +53,11 @@ mod tests {
         let err: AppError = std::io::Error::new(std::io::ErrorKind::NotFound, "nope").into();
         assert_eq!(err.code, ErrorCode::Io);
         assert_eq!(err.details.as_deref(), Some("nope"));
+    }
+
+    #[test]
+    fn internal_code_serializes_screaming() {
+        let json = serde_json::to_value(AppError::new(ErrorCode::Internal, "x")).unwrap();
+        assert_eq!(json["code"], "INTERNAL");
     }
 }
