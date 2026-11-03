@@ -9,15 +9,36 @@ interface PasswordPromptState {
   answer(value: string | null): void;
 }
 
-export const usePasswordPrompt = create<PasswordPromptState>()((set, get) => ({
-  open: false,
-  incorrect: false,
-  fileName: "",
-  resolve: null,
-  ask: (fileName, incorrect) =>
-    new Promise((resolve) => set({ open: true, incorrect, fileName, resolve })),
-  answer: (value) => {
-    get().resolve?.(value);
-    set({ open: false, resolve: null });
-  },
-}));
+interface PendingAsk {
+  fileName: string;
+  incorrect: boolean;
+  resolve: (value: string | null) => void;
+}
+
+/** Pedidos que chegaram enquanto o diálogo estava aberto; atendidos em ordem (um por vez). */
+const queue: PendingAsk[] = [];
+
+export const usePasswordPrompt = create<PasswordPromptState>()((set, get) => {
+  const showNext = () => {
+    const next = queue.shift();
+    if (next) set({ open: true, incorrect: next.incorrect, fileName: next.fileName, resolve: next.resolve });
+    else set({ open: false, resolve: null });
+  };
+  return {
+    open: false,
+    incorrect: false,
+    fileName: "",
+    resolve: null,
+    ask: (fileName, incorrect) =>
+      new Promise((resolve) => {
+        queue.push({ fileName, incorrect, resolve });
+        if (!get().open) showNext();
+      }),
+    answer: (value) => {
+      const current = get().resolve;
+      if (!current) return;
+      current(value);
+      showNext();
+    },
+  };
+});

@@ -2,11 +2,12 @@ import { useEffect, useState } from "react";
 import { usePasswordPrompt } from "../store/passwordPrompt";
 
 export function PasswordDialog() {
-  const { open, incorrect, fileName, answer } = usePasswordPrompt();
+  const { open, incorrect, fileName, answer, resolve } = usePasswordPrompt();
   const [value, setValue] = useState("");
+  // Limpa o campo a cada novo pedido (inclusive o próximo da fila, com o diálogo ainda aberto).
   useEffect(() => {
-    if (open) setValue("");
-  }, [open]);
+    setValue("");
+  }, [resolve]);
   if (!open) return null;
   return (
     <div className="modal-backdrop">

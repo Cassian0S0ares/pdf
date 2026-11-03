@@ -18,3 +18,28 @@ describe("password prompt", () => {
     await expect(p).resolves.toBeNull();
   });
 });
+
+describe("password prompt queue", () => {
+  it("serializes concurrent asks: each resolves with its own answer, in order", async () => {
+    const { ask, answer } = usePasswordPrompt.getState();
+    const first = ask("a.pdf", false);
+    const second = ask("b.pdf", true);
+    expect(usePasswordPrompt.getState().fileName).toBe("a.pdf");
+    expect(usePasswordPrompt.getState().incorrect).toBe(false);
+
+    answer("um");
+    await expect(first).resolves.toBe("um");
+    expect(usePasswordPrompt.getState().open).toBe(true);
+    expect(usePasswordPrompt.getState().fileName).toBe("b.pdf");
+    expect(usePasswordPrompt.getState().incorrect).toBe(true);
+
+    usePasswordPrompt.getState().answer("dois");
+    await expect(second).resolves.toBe("dois");
+    expect(usePasswordPrompt.getState().open).toBe(false);
+  });
+
+  it("answer with nothing pending is a no-op", () => {
+    usePasswordPrompt.getState().answer("x");
+    expect(usePasswordPrompt.getState().open).toBe(false);
+  });
+});
