@@ -30,6 +30,17 @@ html, body, #root { margin: 0; height: 100%; }
 .badge { margin-left: auto; padding: 2px 8px; border-radius: 10px; background: #fdecea; color: var(--accent); font-size: 12px; }
 
 .main { flex: 1; display: flex; min-height: 0; }
+.sidebar { width: 180px; display: flex; flex-direction: column; background: var(--panel); border-right: 1px solid var(--border); }
+.sidebar-tabs { display: flex; border-bottom: 1px solid var(--border); }
+.sidebar-tabs button { flex: 1; padding: 6px; border: none; background: none; cursor: pointer; }
+.sidebar-tabs button[aria-pressed="true"] { border-bottom: 2px solid var(--accent); }
+.sidebar-body { flex: 1; overflow: auto; padding: 8px; }
+.thumbnails { display: flex; flex-direction: column; align-items: center; gap: 10px; }
+.thumb { display: flex; flex-direction: column; align-items: center; gap: 4px; border: 2px solid transparent; background: none; padding: 2px; cursor: pointer; }
+.thumb.current { border-color: var(--accent); }
+.outline { list-style: none; padding-left: 10px; margin: 0; }
+.outline button { border: none; background: none; text-align: left; padding: 3px 0; cursor: pointer; }
+.muted { color: #888; }
 .document-view { flex: 1; overflow: auto; background: var(--page-bg); padding: 16px 0; }
 .page-slot { display: flex; justify-content: center; margin-bottom: 12px; }
 .page { position: relative; background: white; box-shadow: 0 1px 4px rgba(0, 0, 0, 0.4); }
