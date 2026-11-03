@@ -2,8 +2,9 @@ import { useEffect } from "react";
 import { listen } from "@tauri-apps/api/event";
 import { getCurrentWebview } from "@tauri-apps/api/webview";
 import { initialFiles } from "../lib/ipc";
+import { usePasswordPrompt } from "../store/passwordPrompt";
 import { openFiles, runShortcut } from "./actions";
-import { shortcutFor } from "./shortcuts";
+import { shortcutFor, shouldHandleShortcut } from "./shortcuts";
 
 let initialHandled = false;
 const isPdf = (p: string) => p.toLowerCase().endsWith(".pdf");
@@ -22,6 +23,7 @@ export function useOpenFileSources(): void {
     const onKey = (e: KeyboardEvent) => {
       const action = shortcutFor(e);
       if (!action) return;
+      if (!shouldHandleShortcut(e, usePasswordPrompt.getState().open)) return;
       e.preventDefault();
       runShortcut(action);
     };

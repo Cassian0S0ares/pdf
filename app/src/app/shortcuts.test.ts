@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { shortcutFor } from "./shortcuts";
+import { shortcutFor, shouldHandleShortcut } from "./shortcuts";
 
 const k = (key: string, mod = true) => ({ key, ctrlKey: mod, metaKey: false });
 
@@ -22,5 +22,30 @@ describe("shortcutFor", () => {
 
   it("ignores plain letters", () => {
     expect(shortcutFor(k("o", false))).toBeNull();
+  });
+});
+
+describe("shouldHandleShortcut", () => {
+  const withTarget = (key: string, mod: boolean, target: EventTarget) => ({
+    key, ctrlKey: mod, metaKey: false, target,
+  });
+
+  it("ignores everything while the password prompt is open", () => {
+    expect(shouldHandleShortcut(withTarget("o", true, document.body), true)).toBe(false);
+    expect(shouldHandleShortcut(withTarget("PageDown", false, document.body), true)).toBe(false);
+  });
+
+  it("ignores PageDown when typing in an input", () => {
+    const input = document.createElement("input");
+    expect(shouldHandleShortcut(withTarget("PageDown", false, input), false)).toBe(false);
+  });
+
+  it("still handles Ctrl+F while focused on an input", () => {
+    const input = document.createElement("input");
+    expect(shouldHandleShortcut(withTarget("f", true, input), false)).toBe(true);
+  });
+
+  it("handles PageDown on the body", () => {
+    expect(shouldHandleShortcut(withTarget("PageDown", false, document.body), false)).toBe(true);
   });
 });
