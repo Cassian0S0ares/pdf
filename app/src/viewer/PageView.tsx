@@ -57,9 +57,13 @@ export function PageView({
       const container = textRef.current;
       container.replaceChildren();
       layer = new TextLayer({ textContentSource: page.streamTextContent(), container, viewport });
-      await layer.render();
+      try {
+        await layer.render();
+      } catch {
+        return; // cancelado
+      }
       if (!cancelled) setTextDivs(layer.textDivs);
-    })();
+    })().catch(() => undefined);
 
     return () => {
       cancelled = true;

@@ -6,6 +6,7 @@ import { useElementSize } from "./useElementSize";
 import { computeScale } from "./zoom";
 
 const FALLBACK_SIZE = { width: 612, height: 792 };
+const EMPTY: number[] = [];
 
 export function DocumentView({ tab }: { tab: Tab }) {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -70,6 +71,19 @@ export function DocumentView({ tab }: { tab: Tab }) {
     updateTab(docId, { gotoPage: null, currentPage: target });
   }, [tab.gotoPage, tab.viewMode, docId, updateTab]);
 
+  // Lookup estável por página: só recalcula quando os matches da busca mudam,
+  // evitando novas referências de array a cada render (ex.: IntersectionObserver
+  // atualizando `visible` durante a rolagem) que reacionariam o scrollIntoView em PageView.
+  const highlightsByPage = useMemo(() => {
+    const map = new Map<number, number[]>();
+    for (const m of tab.search.matches) {
+      const existing = map.get(m.pageIndex);
+      if (existing) existing.push(...m.itemIndices);
+      else map.set(m.pageIndex, [...m.itemIndices]);
+    }
+    return map;
+  }, [tab.search.matches]);
+
   const active = tab.search.matches[tab.search.active];
 
   return (
@@ -90,8 +104,8 @@ export function DocumentView({ tab }: { tab: Tab }) {
             scale={scale}
             rotation={tab.rotation}
             visible={tab.viewMode === "single" || visible.has(i)}
-            highlights={tab.search.matches.filter((m) => m.pageIndex === i).flatMap((m) => m.itemIndices)}
-            activeHighlights={active?.pageIndex === i ? active.itemIndices : []}
+            highlights={highlightsByPage.get(i) ?? EMPTY}
+            activeHighlights={active?.pageIndex === i ? active.itemIndices : EMPTY}
           />
         </div>
       ))}
