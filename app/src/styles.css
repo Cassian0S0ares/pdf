@@ -68,3 +68,10 @@ html, body, #root { margin: 0; height: 100%; }
 .notice button { border: none; background: none; color: inherit; cursor: pointer; }
 
 #print-root { display: none; }
+
+@media print {
+  #root { display: none !important; }
+  #print-root { display: block !important; }
+  .print-page { display: block; width: 100%; page-break-after: always; break-after: page; }
+  @page { margin: 0; }
+}

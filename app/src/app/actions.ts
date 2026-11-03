@@ -4,6 +4,7 @@ import { selectActiveTab, useDocuments, type TabPatch } from "../store/documents
 import { useNotices } from "../store/notices";
 import { usePasswordPrompt } from "../store/passwordPrompt";
 import { nextZoom, rotate, type FitMode } from "../viewer/zoom";
+import { printPdf } from "../print/printPdf";
 import { closeFile, openFile } from "./openFile";
 import type { ShortcutAction } from "./shortcuts";
 
@@ -66,7 +67,15 @@ export function toggleViewMode(): void {
 }
 
 export async function printActive(): Promise<void> {
-  useNotices.getState().push("info", "Impressão disponível em breve");
+  const tab = active();
+  const root = document.getElementById("print-root");
+  if (!tab || !root) return;
+  try {
+    useNotices.getState().push("info", "Preparando impressão…");
+    await printPdf(tab.pdf, root);
+  } catch (e) {
+    useNotices.getState().push("error", `Impressão: ${errorMessage(e)}`);
+  }
 }
 
 export function runShortcut(action: ShortcutAction): void {
