@@ -1,32 +1,25 @@
+/// <reference types="vitest/config" />
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
-// @ts-expect-error type error without @types/node package
-import process from "node:process";
+
 const host = process.env.TAURI_DEV_HOST;
 
-// https://vite.dev/config/
-export default defineConfig(() => ({
+export default defineConfig({
   plugins: [react()],
-
-  // Vite options tailored for Tauri development and only applied in `tauri dev` or `tauri build`
-  //
-  // 1. prevent Vite from obscuring rust errors
   clearScreen: false,
-  // 2. tauri expects a fixed port, fail if that port is not available
   server: {
     port: 1420,
     strictPort: true,
     host: host || false,
-    hmr: host
-      ? {
-          protocol: "ws",
-          host,
-          port: 1421,
-        }
-      : undefined,
-    watch: {
-      // 3. tell Vite to ignore watching `src-tauri`
-      ignored: ["**/src-tauri/**"],
-    },
+    hmr: host ? { protocol: "ws", host, port: 1421 } : undefined,
+    watch: { ignored: ["**/src-tauri/**"] },
   },
-}));
+  test: {
+    environment: "jsdom",
+    setupFiles: ["./src/test/setup.ts"],
+    // No Node, usar o build legacy do PDF.js (sem worker de browser).
+    alias: [{ find: /^pdfjs-dist$/, replacement: "pdfjs-dist/legacy/build/pdf.mjs" }],
+    // A inicialização do fake worker do PDF.js em Node pode passar de 5s a frio.
+    testTimeout: 15000,
+  },
+});
