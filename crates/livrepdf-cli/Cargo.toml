@@ -1,0 +1,8 @@
+[package]
+name = "livrepdf-cli"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+livrepdf-core = { path = "../livrepdf-core" }
