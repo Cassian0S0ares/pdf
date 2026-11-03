@@ -65,6 +65,13 @@ describe("openFile", () => {
     expect(useDocuments.getState().tabs).toHaveLength(0);
   });
 
+  it("cancelled password tolerates a failing closeDocument", async () => {
+    engine.loadPdf.mockRejectedValue(new PasswordRequiredError(false));
+    ipc.closeDocument.mockRejectedValue(new Error("ipc"));
+    await expect(openFile("C:/a.pdf", vi.fn().mockResolvedValue(null))).resolves.toBe("cancelled");
+    expect(ipc.closeDocument).toHaveBeenCalledTimes(1);
+  });
+
   it("render failure closes the core session and rethrows", async () => {
     engine.loadPdf.mockRejectedValue(new Error("corrompido"));
     await expect(openFile("C:/a.pdf", vi.fn())).rejects.toThrow("corrompido");
@@ -78,6 +85,20 @@ describe("closeFile", () => {
     await openFile("C:/a.pdf", vi.fn());
     await closeFile("doc-1");
     expect(fakePdf.destroy).toHaveBeenCalled();
+    expect(ipc.closeDocument).toHaveBeenCalledWith("doc-1");
+    expect(useDocuments.getState().tabs).toHaveLength(0);
+  });
+
+  it("closes the core session even if pdf.destroy fails", async () => {
+    vi.clearAllMocks();
+    useDocuments.setState({ tabs: [], activeId: null });
+    ipc.openDocument.mockResolvedValue(info);
+    ipc.getDocumentBytes.mockResolvedValue(new Uint8Array([1]));
+    ipc.closeDocument.mockResolvedValue(undefined);
+    const failing = { destroy: vi.fn().mockRejectedValue(new Error("destroy")) };
+    engine.loadPdf.mockResolvedValue(failing);
+    await openFile("C:/a.pdf", vi.fn());
+    await expect(closeFile("doc-1")).rejects.toThrow("destroy");
     expect(ipc.closeDocument).toHaveBeenCalledWith("doc-1");
     expect(useDocuments.getState().tabs).toHaveLength(0);
   });

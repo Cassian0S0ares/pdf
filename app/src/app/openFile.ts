@@ -24,7 +24,7 @@ export async function openFile(path: string, askPassword: AskPassword): Promise<
         if (!(e instanceof PasswordRequiredError)) throw e;
         const answer = await askPassword(info.fileName, e.incorrect);
         if (answer === null) {
-          await closeDocument(info.docId);
+          await closeDocument(info.docId).catch(() => undefined);
           return "cancelled";
         }
         password = answer;
@@ -40,6 +40,9 @@ export async function closeFile(docId: string): Promise<void> {
   const tab = useDocuments.getState().tabs.find((t) => t.info.docId === docId);
   if (!tab) return;
   useDocuments.getState().closeTab(docId);
-  await tab.pdf.destroy();
-  await closeDocument(docId);
+  try {
+    await tab.pdf.destroy();
+  } finally {
+    await closeDocument(docId);
+  }
 }
