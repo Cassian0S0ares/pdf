@@ -6,3 +6,9 @@ license.workspace = true
 
 [dependencies]
 livrepdf-core = { path = "../livrepdf-core" }
+clap = { version = "4", features = ["derive"] }
+serde_json.workspace = true
+
+[dev-dependencies]
+assert_cmd = "2"
+tempfile = "3"
