@@ -47,7 +47,17 @@ html, body, #root { margin: 0; height: 100%; }
 .muted { color: #888; }
 .document-view { flex: 1; overflow: auto; background: var(--page-bg); padding: 16px 0; }
 .page-slot { display: flex; justify-content: center; margin-bottom: 12px; }
-.page { position: relative; background: white; box-shadow: 0 1px 4px rgba(0, 0, 0, 0.4); }
+/* O TextLayer do PDF.js 5 depende destas variáveis, que o pdf_viewer.css só define sob `.pdfViewer .page`. */
+.page {
+  --scale-factor: 1;
+  --user-unit: 1;
+  --total-scale-factor: calc(var(--scale-factor) * var(--user-unit));
+  --scale-round-x: 1px;
+  --scale-round-y: 1px;
+  position: relative;
+  background: white;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
+}
 .page canvas { display: block; }
 
 .textLayer .search-hit { background: rgba(255, 213, 0, 0.45); border-radius: 2px; }

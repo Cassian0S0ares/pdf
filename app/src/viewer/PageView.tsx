@@ -18,6 +18,7 @@ interface Props {
 export function PageView({
   pdf, pageIndex, size, scale, rotation, visible, textLayer = true, highlights = [], activeHighlights = [],
 }: Props) {
+  const pageRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const textRef = useRef<HTMLDivElement>(null);
   const [textDivs, setTextDivs] = useState<HTMLElement[]>([]);
@@ -36,6 +37,8 @@ export function PageView({
       const page = await pdf.getPage(pageIndex + 1);
       if (cancelled) return;
       const viewport = page.getViewport({ scale: scale * PDF_TO_CSS, rotation: (page.rotate + rotation) % 360 });
+      // --total-scale-factor (TextLayer) = --scale-factor * --user-unit (ver styles.css).
+      pageRef.current?.style.setProperty("--user-unit", String(viewport.userUnit));
       const canvas = canvasRef.current!;
       const ratio = window.devicePixelRatio || 1;
       canvas.width = Math.floor(viewport.width * ratio);
@@ -82,6 +85,7 @@ export function PageView({
 
   return (
     <div
+      ref={pageRef}
       className="page"
       data-page-index={pageIndex}
       style={{ width: cssWidth, height: cssHeight, ["--scale-factor" as string]: scale * PDF_TO_CSS }}
