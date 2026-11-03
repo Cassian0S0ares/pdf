@@ -3,7 +3,7 @@ import { useDocuments, type Tab } from "../store/documents";
 import { PageView } from "./PageView";
 import { usePageSizes } from "./pageSizes";
 import { useElementSize } from "./useElementSize";
-import { computeScale } from "./zoom";
+import { computeScale, referenceSize } from "./zoom";
 
 const FALLBACK_SIZE = { width: 612, height: 792 };
 const EMPTY: number[] = [];
@@ -17,7 +17,11 @@ export function DocumentView({ tab }: { tab: Tab }) {
   const [visible, setVisible] = useState<Set<number>>(new Set());
   const docId = tab.info.docId;
 
-  const reference = sizes[tab.currentPage] ?? sizes[0] ?? FALLBACK_SIZE;
+  const reference =
+    referenceSize(sizes, tab.fitMode, tab.rotation, {
+      containerWidth: container.width,
+      containerHeight: container.height,
+    }) ?? FALLBACK_SIZE;
   const scale = computeScale({
     fitMode: tab.fitMode,
     zoom: tab.zoom,
